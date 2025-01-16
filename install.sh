@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # author: CX
 # last edited: 2025-01-16
@@ -11,13 +11,14 @@
 ############################################################################################################
 
 # if any command inside script returns error, exit and return that error
+PROXY="127.0.0.1:7890"
 set -e
 
 install_proxy(){
 	# Install the necessary dependencies
 	# Check if there is a existing proxy
-	if [ clash -v ]; then
-		echo "No proxy detected. Installing."
+	if ! command -v clash 2>&1 >/dev/null; then
+		echo "No proxy util detected. Installing."
 		sudo apt-get update
 		sudo apt-get -y install curl wget jq
 		cd /tmp \
@@ -27,8 +28,13 @@ install_proxy(){
 		&& mv clash* clash \
 		&& chmod +x clash \
 		&& sudo mv clash /usr/local/bin/clash
-		if [ clash -v ]; then
+		if command -v clash 2>&1 >/dev/null; then
 			echo "Proxy installed successfully."
+			if [ -z "$CLASHPATH" ]; then
+				echo "export CLASHPATH=/usr/local/bin" >> ~/.bashrc && \
+				echo 'export ${PATH}:${CLASHPATH}' >> ~/.bashrc && \
+				source ~/.bashrc
+			fi
 			return 0
 		else
 			echo "Proxy installation failed."
@@ -37,20 +43,20 @@ install_proxy(){
 			return 1
 		fi
 	else
-		echo "Proxy detected. Skipping."
+		echo "Proxy util detected. Skipping."
 		return 0
 	fi
 }
 run_proxy(){
 	echo "Trying to launch the proxy service."
-	if [ -e ~/.config/clash/config.yaml ]; then
+	if [ -e "$HOME/.config/clash/config.yaml" ]; then
 		echo "Proxy config file detected."
 	else
 		echo "Proxy config file not detected.Downloading."
 		echo "Notice: The example proxy are paid by the author, it will not be maintained forever."
-		mkdir -p ~/.config/clash
+		mkdir -p "$HOME/.config/clash"
 		wget https://raw.githubusercontent.com/Iachryphagy/Image_server/refs/heads/main/config.yaml -O ~/.config/clash/config.yaml
-		if [-e ~/.config/clash/config.yaml]; then
+		if [ -e "$HOME/.config/clash/config.yaml" ]; then
 			echo "Proxy Config file downloaded successfully."
 		else
 			echo "Failed to download proxy config file."
@@ -60,20 +66,20 @@ run_proxy(){
 		fi
 	fi
 	# Run the proxy
-	if [ clash & ]; then
-		curl -s -X PUT http://127.0.0.1:9090/proxies/Proxy --data "{\"name\":\"hongkong\"}"
-		echo "Proxy is running."
-	else
-		echo "Proxy is not installed."
-		echo "Please check messages above."
-	fi
-	if [ ping -c 1 google.com ]; then
-		echo "Proxy is working."
-	else
-		echo "Please check your network environment properly."
-		return 1
+	clash &
+	curl -s -X PUT http://127.0.0.1:9090/proxies/Proxy --data "{\"name\":\"hongkong\"}"
+	echo "Proxy is running."
+	export http_proxy=http://127.0.0.1:7890
+	export https_proxy=http://127.0.0.1:7890
+}
+close_proxy(){
+	PID_NUM=`ps -ef | grep clash | wc -l`
+	PID=`ps -ef | grep clash | awk '{print $2}'`
+	if [ $PID_NUM -ne 0 ]; then
+		kill -9 $PID
 	fi
 }
+
 ##########################################################################
 # References:
 #
@@ -90,9 +96,9 @@ install_docker() {
 	else
 		# Add Docker's official GPG key:
 		sudo apt-get update
-		sudo apt-get install ca-certificates curl
+		sudo apt-get -y install ca-certificates curl
 		sudo install -m 0755 -d /etc/apt/keyrings
-		sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+		sudo curl -x $PROXY -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
 		sudo chmod a+r /etc/apt/keyrings/docker.asc
 
 		# Add the repository to Apt sources:
@@ -103,7 +109,7 @@ install_docker() {
 		sudo apt-get update
 
 		# Install the latest version of Docker:
-		sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+		sudo apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 		# Verify that Docker is installed correctly by running the hello-world image:
 		if sudo docker run hello-world; then
 			echo "Docker installed successfully."
@@ -135,34 +141,32 @@ install_docker() {
 ##########################################################################
 
 install_singularity() {
-
 	# Install the Singularity dependencies:
 	sudo apt-get update && sudo apt-get install -y build-essential uuid-dev libgpgme-dev squashfs-tools libseccomp-dev wget pkg-config git cryptsetup-bin
-
-	# Configure and Install the Go support:
-
-	# Notice：
-	# there may be a problem connecting to the download link under the domain "google.com",
-	# you can download it manually and put it in the same directory as the script.
-	export VERSION=1.17.6 OS=linux ARCH=amd64 && \
-    wget https://dl.google.com/go/go$VERSION.$OS-$ARCH.tar.gz && \
-    sudo tar -C /usr/local -xzvf go$VERSION.$OS-$ARCH.tar.gz && \
-    rm go$VERSION.$OS-$ARCH.tar.gz
-	# Setup environment variables
-	if [ -z "$GOPATH" ]; then
+	# # Configure and Install the Go support:
+	
+	if [ ! -z "$GOPATH" ]; then
+		# Notice：
+		# there may be a problem connecting to the download link under the domain "google.com",
+		# you can download it manually and put it in the same directory as the script.
+		export VERSION=1.17.6 OS=linux ARCH=amd64 && \
+		curl -x $PROXY https://dl.google.com/go/go$VERSION.$OS-$ARCH.tar.gz && \
+		sudo tar -C /usr/local -xzvf go$VERSION.$OS-$ARCH.tar.gz && \
+		rm go$VERSION.$OS-$ARCH.tar.gz
+		# Setup environment variables
 		echo 'export GOPATH=${HOME}/go' >> ~/.bashrc && \
-    	echo 'export PATH=/usr/local/go/bin:${PATH}:${GOPATH}/bin' >> ~/.bashrc && \
-    	source ~/.bashrc
+		echo 'export PATH=/usr/local/go/bin:${PATH}:${GOPATH}/bin' >> ~/.bashrc && \
+		source ~/.bashrc
 	fi
 
 	# Install Singularity
 	export VERSION=3.9.2 && # adjust this as necessary \
-    wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-ce-${VERSION}.tar.gz && \
+    curl -x $PROXY https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-ce-${VERSION}.tar.gz && \
     tar -xzf singularity-ce-${VERSION}.tar.gz && \
     cd singularity-ce-${VERSION}
 	# SingularityCE uses a custom build system called makeit. mconfig is called to generate a Makefile and then make is used to compile and install.
 	# The --prefix flag is used to specify the installation directory. The default is /usr/local.
-	./mconfig --prefix=//usr/local && \ 
+	./mconfig --prefix=//usr/local && \
     make -C ./builddir && \
     sudo make -C ./builddir install
 }
@@ -191,7 +195,7 @@ main(){
 	install_docker
 	install_singularity
 	install_source_service
+	close_proxy
 }
 
 main
-
