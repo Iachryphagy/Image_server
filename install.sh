@@ -27,7 +27,7 @@ install_proxy(){
 		&& mv clash* clash \
 		&& chmod +x clash \
 		&& sudo mv clash /usr/local/bin/clash
-		if [clash -v]; then
+		if [ clash -v ]; then
 			echo "Proxy installed successfully."
 			return 0
 		else
@@ -42,25 +42,32 @@ install_proxy(){
 	fi
 }
 run_proxy(){
-	mkdir -p ~/.config/clash
-	wget https://raw.githubusercontent.com/Iachryphagy/Image_server/refs/heads/main/config.yaml -O ~/.config/clash/config.yaml
+	echo "Trying to launch the proxy service."
 	if [-e ~/.config/clash/config.yaml]; then
-		echo "Proxy Config file downloaded successfully."
+		echo "Proxy config file detected."
 	else
-		echo "Failed to download proxy config file."
-		echo "Please download the proxy util manually at https://raw.githubusercontent.com/Iachryphagy/Image_server/refs/heads/main/config.yaml and put it at ~/.config/clash/config.yaml"
-		echo "Then run the script again."
-		return 1
+		echo "Proxy config file not detected.Downloading."
+		echo "Notice: The example proxy are paid by the author, it will not be maintained forever."
+		mkdir -p ~/.config/clash
+		wget https://raw.githubusercontent.com/Iachryphagy/Image_server/refs/heads/main/config.yaml -O ~/.config/clash/config.yaml
+		if [-e ~/.config/clash/config.yaml]; then
+			echo "Proxy Config file downloaded successfully."
+		else
+			echo "Failed to download proxy config file."
+			echo "Please download the proxy util manually at https://raw.githubusercontent.com/Iachryphagy/Image_server/refs/heads/main/config.yaml and put it at ~/.config/clash/config.yaml"
+			echo "Then run the script again."
+			return 1
+		fi
 	fi
 	# Run the proxy
-	if [clash &]; then
+	if [ clash & ]; then
 		curl -s -X PUT http://127.0.0.1:9090/proxies/Proxy --data "{\"name\":\"hongkong\"}"
 		echo "Proxy is running."
 	else
 		echo "Proxy is not installed."
 		echo "Please check messages above."
 	fi
-	if [ping -c 1 google.com]; then
+	if [ ping -c 1 google.com ]; then
 		echo "Proxy is working."
 	else
 		echo "Please prepare your network environment properly."
