@@ -1,6 +1,7 @@
 #!/bin/sh
 
 # author: CX
+# last edited: 2025-01-16
 
 ###########################################################################################################
 #
@@ -15,7 +16,7 @@ set -e
 install_proxy(){
 	# Install the necessary dependencies
 	# Check if there is a existing proxy
-	if [clash -v]; then
+	if [ clash -v ]; then
 		echo "No proxy detected. Installing."
 		sudo apt-get update
 		sudo apt-get -y install curl wget jq
@@ -41,7 +42,7 @@ install_proxy(){
 	fi
 }
 run_proxy(){
-	makedir -p ~/.config/clash
+	mkdir -p ~/.config/clash
 	wget https://raw.githubusercontent.com/Iachryphagy/Image_server/refs/heads/main/config.yaml -O ~/.config/clash/config.yaml
 	if [-e ~/.config/clash/config.yaml]; then
 		echo "Proxy Config file downloaded successfully."
