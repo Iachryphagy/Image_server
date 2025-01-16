@@ -43,7 +43,7 @@ install_proxy(){
 }
 run_proxy(){
 	echo "Trying to launch the proxy service."
-	if [-e ~/.config/clash/config.yaml]; then
+	if [ -e ~/.config/clash/config.yaml ]; then
 		echo "Proxy config file detected."
 	else
 		echo "Proxy config file not detected.Downloading."
@@ -70,7 +70,7 @@ run_proxy(){
 	if [ ping -c 1 google.com ]; then
 		echo "Proxy is working."
 	else
-		echo "Please prepare your network environment properly."
+		echo "Please check your network environment properly."
 		return 1
 	fi
 }
