@@ -21,13 +21,20 @@ install_proxy(){
 		echo "No proxy util detected. Installing."
 		sudo apt-get update
 		sudo apt-get -y install curl wget jq
-		cd /tmp \
-		&& rm -f clash* || true \
-		&& wget https://github.com/Kuingsmile/clash-core/releases/download/1.18/clash-linux-amd64-v1.18.0.gz || true \
-		&& gzip -d clash* \
-		&& mv clash* clash \
-		&& chmod +x clash \
-		&& sudo mv clash /usr/local/bin/clash
+		if [ -e "./clash*"]; then
+			gzip -d clash*
+			mv clash* clash
+			chmod +x clash
+			sudo mv clash /usr/local/bin/clash
+		else
+			cd /tmp \
+			&& rm -f clash* || true \
+			&& wget https://github.com/Kuingsmile/clash-core/releases/download/1.18/clash-linux-amd64-v1.18.0.gz || true \
+			&& gzip -d clash* \
+			&& mv clash* clash \
+			&& chmod +x clash \
+			&& sudo mv clash /usr/local/bin/clash
+		fi
 		if command -v clash 2>&1 >/dev/null; then
 			echo "Proxy installed successfully."
 			if [ -z "$CLASHPATH" ]; then
