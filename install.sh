@@ -21,7 +21,7 @@ install_proxy(){
 		echo "No proxy util detected. Installing."
 		sudo apt-get update
 		sudo apt-get -y install curl wget jq
-		if [ -e "./clash*"]; then
+		if [ -e clash* ]; then
 			gzip -d clash*
 			mv clash* clash
 			chmod +x clash
