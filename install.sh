@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # author: CX
-# last edited: 2025-01-16
+# last edited: 2025-02-19
 
 ###########################################################################################################
 #
@@ -10,7 +10,11 @@
 #
 ############################################################################################################
 
-# if any command inside script returns error, exit and return that error
+
+# "Usage: sh ./install.sh"
+# "or chmod a+x install.sh && ./install.sh"
+# "This script will install proxy service for your system."
+
 PROXY="127.0.0.1:7890"
 set -e
 
@@ -18,16 +22,23 @@ install_proxy(){
 	# Install the necessary dependencies
 	# Check if there is a existing proxy
 	if ! command -v clash 2>&1 >/dev/null; then
-		echo "No proxy util detected. Installing."
-		sudo apt-get update
-		sudo apt-get -y install curl wget jq
-		cd /tmp \
-		&& rm -f clash* || true \
-		&& wget https://github.com/Kuingsmile/clash-core/releases/download/1.18/clash-linux-amd64-v1.18.0.gz || true \
-		&& gzip -d clash* \
-		&& mv clash* clash \
-		&& chmod +x clash \
-		&& sudo mv clash /usr/local/bin/clash
+    echo "No proxy util detected. Installing."
+    sudo apt-get -y install curl wget jq
+		if [ -e clash* ]; then
+			gzip -d clash*
+			mv clash* clash
+			chmod +x clash
+			sudo mv clash /usr/local/bin/clash
+		else
+			cd /tmp \
+			&& rm -f clash* || true \
+			&& wget https://github.com/Kuingsmile/clash-core/releases/download/1.18/clash-linux-amd64-v1.18.0.gz || true \
+			&& gzip -d clash* \
+			&& mv clash* clash \
+			&& chmod +x clash \
+			&& sudo mv clash /usr/local/bin/clash
+		fi
+		
 		if command -v clash 2>&1 >/dev/null; then
 			echo "Proxy installed successfully."
 			if [ -z "$CLASHPATH" ]; then
@@ -48,9 +59,14 @@ install_proxy(){
 	fi
 }
 run_proxy(){
+    # Figuring the proxy config file
 	echo "Trying to launch the proxy service."
 	if [ -e "$HOME/.config/clash/config.yaml" ]; then
 		echo "Proxy config file detected."
+    elif [ -e "./config.yaml" ]; then
+        echo "Local proxy config file detected."
+        mkdir -p "$HOME/.config/clash"
+        mv ./config.yaml "$HOME/.config/clash/config.yaml"
 	else
 		echo "Proxy config file not detected.Downloading."
 		echo "Notice: The example proxy are paid by the author, it will not be maintained forever."
@@ -65,6 +81,15 @@ run_proxy(){
 			return 1
 		fi
 	fi
+    # Figuring the countryMMDB file
+    if [ -e "$HOME/.config/clash/Country.mmdb" ]; then
+        echo "Country.mmdb file detected."
+    elif [ -e "./Country.mmdb" ]; then
+        echo "Country.mmdb file not detected.Downloading."
+        mv ./Country.mmdb "$HOME/.config/clash/Country.mmdb"
+    else
+        echo "Country.mmdb file not detected, it will be downloaded automatically while you start the clash service."
+        echo "But it may fail due to the network issue."
 	# Run the proxy
 	clash &
 	curl -s -X PUT http://127.0.0.1:9090/proxies/Proxy --data "{\"name\":\"hongkong\"}"

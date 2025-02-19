@@ -15,11 +15,29 @@ proxies:
     alterId: 0
     cipher: auto
     udp: true
+  - name: taiwan
+    type: vmess
+    server: www.jfewoo.com
+    port: 22512
+    uuid: 99f87ab7-154e-32cf-bbe6-0a5d7acf2e31
+    alterId: 0
+    cipher: auto
+    udp: true
+  - name: singapore
+    type: vmess
+    server: a.putaotnt.com
+    port: 37085
+    uuid: 99f87ab7-154e-32cf-bbe6-0a5d7acf2e31
+    alterId: 0
+    cipher: auto
+    udp: true
 proxy-groups:
   - name: Proxy
     type: select
     proxies:
       - hongkong
+      - taiwan
+      - singapore
   - name: Direct
     type: select
     proxies:
