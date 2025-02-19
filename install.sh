@@ -22,8 +22,9 @@ install_proxy(){
 	# Install the necessary dependencies
 	# Check if there is a existing proxy
 	if ! command -v clash 2>&1 >/dev/null; then
-    echo "No proxy util detected. Installing."
-    sudo apt-get -y install curl wget jq
+		echo "No proxy util detected. Installing."
+		sudo apt-get update
+		sudo apt-get -y install curl wget jq
 		if [ -e clash* ]; then
 			gzip -d clash*
 			mv clash* clash
@@ -38,7 +39,6 @@ install_proxy(){
 			&& chmod +x clash \
 			&& sudo mv clash /usr/local/bin/clash
 		fi
-		
 		if command -v clash 2>&1 >/dev/null; then
 			echo "Proxy installed successfully."
 			if [ -z "$CLASHPATH" ]; then
